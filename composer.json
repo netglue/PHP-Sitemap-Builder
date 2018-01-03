@@ -13,6 +13,8 @@
         "sort-packages": true
     },
     "require": {
+        "php" : ">=7.1",
+        "ext-xmlwriter" : "*",
         "zendframework/zend-uri": "^2.5"
     },
     "require-dev": {
