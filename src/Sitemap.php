@@ -1,4 +1,10 @@
 <?php
+/**
+ * @see       https://github.com/netglue/PHP-Sitemap-Builder for the canonical source repository
+ * @copyright Copyright (c) 2018 Netglue Ltd. (https://netglue.uk)
+ * @license   https://github.com/netglue/PHP-Sitemap-Builder/blob/master/LICENSE.md MIT License
+ */
+
 declare(strict_types=1);
 
 namespace Netglue\Sitemap;
@@ -9,6 +15,7 @@ use Zend\Uri\UriInterface;
 use Zend\Uri\Exception\ExceptionInterface as UriException;
 use XMLWriter;
 use Countable;
+
 class Sitemap implements Countable
 {
     use BaseUrlTrait;
@@ -60,8 +67,12 @@ class Sitemap implements Countable
         return count($this->locations);
     }
 
-    public function addUri($uri, ?DateTimeInterface $lastMod = null, ?string $changeFreq = null, ?float $priority = null) : void
-    {
+    public function addUri(
+        $uri,
+        ?DateTimeInterface $lastMod = null,
+        ?string $changeFreq = null,
+        ?float $priority = null
+    ) : void {
         try {
             $url = (string) Uri::merge($this->baseUrl, $uri);
         } catch (UriException $e) {
@@ -91,7 +102,7 @@ class Sitemap implements Countable
 
     public function toXmlString() : string
     {
-        if (!$this->xmlString) {
+        if (! $this->xmlString) {
             $writer = $this->getWriter();
             array_walk($this->locations, [$this, 'writeUrl']);
             $writer->endElement();
@@ -103,11 +114,11 @@ class Sitemap implements Countable
 
     private function getWriter() : XMLWriter
     {
-        if (!$this->writer) {
+        if (! $this->writer) {
             $this->writer = new XMLWriter;
             $this->writer->openMemory();
             $this->writer->setIndent(true);
-            $this->writer->startDocument('1.0','UTF-8');
+            $this->writer->startDocument('1.0', 'UTF-8');
             $this->writer->startElement('urlset');
             $this->writer->writeAttribute('xmlns', SitemapIndex::SCHEMA);
         }
@@ -118,15 +129,15 @@ class Sitemap implements Countable
     {
         $writer = $this->getWriter();
         $writer->startElement('url');
-		foreach ($url as $tag => $value) {
-		    $writer->writeElement($tag, $value);
-		}
-		$writer->endElement();
+        foreach ($url as $tag => $value) {
+            $writer->writeElement($tag, $value);
+        }
+        $writer->endElement();
     }
 
     private function changeFreq(string $changeFreq) : string
     {
-        if (!in_array($changeFreq, static::$changeFreq, true)) {
+        if (! in_array($changeFreq, static::$changeFreq, true)) {
             throw new Exception\InvalidArgumentException(sprintf('Invalid change frequency value "%s"', $changeFreq));
         }
         return $changeFreq;
@@ -135,7 +146,10 @@ class Sitemap implements Countable
     private function priority(float $priority) : float
     {
         if ($priority > 1 || $priority < 0) {
-            throw new Exception\InvalidArgumentException(sprintf('Priority must be a decimal between 0 and 1. Received "%0.2f"', $priority));
+            throw new Exception\InvalidArgumentException(sprintf(
+                'Priority must be a decimal between 0 and 1. Received "%0.2f"',
+                $priority
+            ));
         }
         return $priority;
     }
@@ -149,5 +163,4 @@ class Sitemap implements Countable
     {
         return array_values($this->locations);
     }
-
 }

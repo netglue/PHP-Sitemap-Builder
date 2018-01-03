@@ -1,4 +1,10 @@
 <?php
+/**
+ * @see       https://github.com/netglue/PHP-Sitemap-Builder for the canonical source repository
+ * @copyright Copyright (c) 2018 Netglue Ltd. (https://netglue.uk)
+ * @license   https://github.com/netglue/PHP-Sitemap-Builder/blob/master/LICENSE.md MIT License
+ */
+
 declare(strict_types=1);
 
 namespace Netglue\Sitemap\Writer;
@@ -21,7 +27,7 @@ class FileWriter
 
     private function assertWritableDirectory(string $path)
     {
-        if (!is_dir($path) || !is_writable($path)) {
+        if (! is_dir($path) || ! is_writable($path)) {
             throw new Exception\InvalidArgumentException(sprintf(
                 'The given path `%s` is not a writable directory',
                 $path
@@ -59,6 +65,4 @@ class FileWriter
 
         file_put_contents($path, (string) $sitemap);
     }
-
-
 }

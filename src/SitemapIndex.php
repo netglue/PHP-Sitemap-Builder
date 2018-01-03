@@ -1,4 +1,10 @@
 <?php
+/**
+ * @see       https://github.com/netglue/PHP-Sitemap-Builder for the canonical source repository
+ * @copyright Copyright (c) 2018 Netglue Ltd. (https://netglue.uk)
+ * @license   https://github.com/netglue/PHP-Sitemap-Builder/blob/master/LICENSE.md MIT License
+ */
+
 declare(strict_types=1);
 
 namespace Netglue\Sitemap;
@@ -45,7 +51,9 @@ class SitemapIndex
     public function setMaxEntriesPerSitemap(int $max) : void
     {
         if ($max < 1 || $max > 50000) {
-            throw new Exception\InvalidArgumentException('The max number of url entries per sitemap must be between 1 and 50k');
+            throw new Exception\InvalidArgumentException(
+                'The max number of url entries per sitemap must be between 1 and 50k'
+            );
         }
         $this->maxLoc = $max;
     }
@@ -62,7 +70,7 @@ class SitemapIndex
             $this->currentSitemap = null;
         }
         $index = count($this->sitemaps);
-        if (!$this->currentSitemap) {
+        if (! $this->currentSitemap) {
             $filename = $this->generateSitemapName($index);
             $this->currentSitemap = new Sitemap($filename, (string) $this->baseUrl);
             $this->sitemaps[$index] = $this->currentSitemap;
@@ -76,8 +84,12 @@ class SitemapIndex
         return sprintf('sitemap-%d.xml', $index);
     }
 
-    public function addUri($uri, ?DateTimeInterface $lastMod = null, ?string $changeFreq = null, ?float $priority = null) : void
-    {
+    public function addUri(
+        $uri,
+        ?DateTimeInterface $lastMod = null,
+        ?string $changeFreq = null,
+        ?float $priority = null
+    ) : void {
         try {
             $uri = Uri::merge($this->baseUrl, $uri);
         } catch (UriException $e) {
@@ -90,7 +102,7 @@ class SitemapIndex
 
     private function lastMod(?DateTimeInterface $lastMod = null) : ?DateTimeInterface
     {
-        if (!$this->lastMod && $lastMod) {
+        if (! $this->lastMod && $lastMod) {
             $this->lastMod = clone $lastMod;
         }
         if ($lastMod && $lastMod > $this->lastMod) {
@@ -104,32 +116,29 @@ class SitemapIndex
     {
         // LastMod is set to the same date for all sitemaps, but do we care?
         $lastMod = $this->lastMod();
-        if (!$lastMod) {
+        if (! $lastMod) {
             $lastMod = new DateTime;
         }
         $writer = new XMLWriter;
         $writer->openMemory();
         $writer->setIndent(true);
-        $writer->startDocument('1.0','UTF-8');
+        $writer->startDocument('1.0', 'UTF-8');
         $writer->startElement('sitemapindex');
         $writer->writeAttribute('xmlns', self::SCHEMA);
         foreach ($this->sitemaps as $sitemap) {
-			$writer->startElement('sitemap');
-			$sitemapUrl = Uri::merge($this->baseUrl, $sitemap->getName());
-			$writer->writeElement('loc', (string) $sitemapUrl);
-			$writer->writeElement('lastmod', $lastMod->format('Y-m-d'));
-			$writer->endElement();
-		}
-		$writer->endElement();
-		$writer->endDocument();
-		return $writer->outputMemory(true);
+            $writer->startElement('sitemap');
+            $sitemapUrl = Uri::merge($this->baseUrl, $sitemap->getName());
+            $writer->writeElement('loc', (string) $sitemapUrl);
+            $writer->writeElement('lastmod', $lastMod->format('Y-m-d'));
+            $writer->endElement();
+        }
+        $writer->endElement();
+        $writer->endDocument();
+        return $writer->outputMemory(true);
     }
 
     public function __toString() : string
     {
         return $this->toXmlString();
     }
-
-
-
 }

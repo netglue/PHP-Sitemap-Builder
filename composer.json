@@ -13,12 +13,15 @@
         "sort-packages": true
     },
     "require": {
-        "php" : ">=7.1",
-        "ext-xmlwriter" : "*",
+        "php": ">=7.1",
+        "ext-xmlwriter": "*",
         "zendframework/zend-uri": "^2.5"
     },
     "require-dev": {
-        "phpunit/phpunit": "^6.5"
+        "malukenho/docheader": "^0.1.7",
+        "php-coveralls/php-coveralls": "^2.0",
+        "phpunit/phpunit": "^6.5",
+        "zendframework/zend-coding-standard": "~1.0.0"
     },
     "autoload": {
         "psr-4": {
@@ -29,5 +32,18 @@
         "psr-4": {
             "Netglue\\SitemapTest\\": "test/SitemapTest/"
         }
+    },
+    "scripts": {
+        "check": [
+            "@license-check",
+            "@cs-check",
+            "@test"
+        ],
+        "upload-coverage": "php-coveralls -v",
+        "cs-check": "phpcs --colors",
+        "cs-fix": "phpcbf --colors",
+        "license-check": "docheader check src/ test/",
+        "test": "phpunit --colors=always",
+        "test-coverage": "phpunit --coverage-clover build/clover.xml"
     }
 }
