@@ -4,12 +4,14 @@ declare(strict_types=1);
 namespace Netglue\Sitemap;
 
 use DateTimeInterface;
+use Zend\Uri\Uri;
 use Zend\Uri\UriInterface;
 use Zend\Uri\Exception\ExceptionInterface as UriException;
 use XMLWriter;
 use Countable;
 class Sitemap implements Countable
 {
+    use BaseUrlTrait;
 
     private static $changeFreq = [
         'always',
@@ -42,9 +44,10 @@ class Sitemap implements Countable
      */
     private $xmlString;
 
-    public function __construct(string $name)
+    public function __construct(string $name, string $baseUrl)
     {
         $this->name = $name;
+        $this->setBaseUrlWithString($baseUrl);
     }
 
     public function getName() : string
@@ -59,7 +62,7 @@ class Sitemap implements Countable
 
     public function addUri(UriInterface $uri, ?DateTimeInterface $lastMod = null, ?string $changeFreq = null, ?float $priority = null) : void
     {
-        $url = (string) $uri;
+        $url = (string) Uri::merge($this->baseUrl, $uri);
         $payload = [
             'loc' => $url
         ];

@@ -63,7 +63,8 @@ class SitemapIndex
         }
         $index = count($this->sitemaps);
         if (!$this->currentSitemap) {
-            $this->currentSitemap = new Sitemap($this->generateSitemapName($index));
+            $filename = $this->generateSitemapName($index);
+            $this->currentSitemap = new Sitemap($filename, (string) $this->baseUrl);
             $this->sitemaps[$index] = $this->currentSitemap;
         }
 

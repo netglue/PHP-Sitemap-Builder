@@ -11,11 +11,17 @@ use Zend\Uri\Uri;
 class SitemapTest extends TestCase
 {
 
+    private $map;
+
+    public function setUp()
+    {
+        $this->map = new Sitemap('sitemap.xml', 'http://localhost');
+    }
+
     public function testInitialInstance()
     {
-        $map = new Sitemap('foo');
-        $this->assertSame('foo', $map->getName());
-        $this->assertCount(0, $map);
+        $this->assertSame('sitemap.xml', $this->map->getName());
+        $this->assertCount(0, $this->map);
     }
 
     /**
@@ -23,8 +29,7 @@ class SitemapTest extends TestCase
      */
     public function testExceptionThrownForInvalidChangeFreq()
     {
-        $map = new Sitemap('foo');
-        $map->addUri(new Uri('/test'), null, 'nope');
+        $this->map->addUri(new Uri('/test'), null, 'nope');
     }
 
     /**
@@ -32,83 +37,75 @@ class SitemapTest extends TestCase
      */
     public function testExceptionThrownForInvalidPriority()
     {
-        $map = new Sitemap('foo');
-        $map->addUri(new Uri('/test'), null, 'never', 1.5);
+        $this->map->addUri(new Uri('/test'), null, 'never', 1.5);
     }
 
 
     public function testValidUriIncreasesCount()
     {
-        $map = new Sitemap('foo');
-        $map->addUri(new Uri('/test'), null, 'never', 0.9);
-        $this->assertCount(1, $map);
+        $this->map->addUri(new Uri('/test'), null, 'never', 0.9);
+        $this->assertCount(1, $this->map);
     }
 
     public function testXmlIsRenderedWithZeroUrls()
     {
-        $map = new Sitemap('foo');
         $expect = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>';
-        $this->assertXmlStringEqualsXmlString($expect, $map->toXmlString());
+        $this->assertXmlStringEqualsXmlString($expect, $this->map->toXmlString());
     }
 
     public function testExpectedXmlOutput()
     {
-        $map = new Sitemap('foo');
         $lastMod = DateTime::createFromFormat('Y-m-d H:i:s', '2018-01-01 12:00:00');
-        $map->addUri(new Uri('/test'), $lastMod, 'never', 0.9);
+        $this->map->addUri(new Uri('/test'), $lastMod, 'never', 0.9);
 
         $file = __DIR__ . '/data/basic-sitemap.xml';
-        $this->assertXmlStringEqualsXmlFile($file, $map->toXmlString());
+        $this->assertXmlStringEqualsXmlFile($file, $this->map->toXmlString());
     }
 
     public function testSuccessiveCallsToOutputReturnsTheSameValue()
     {
-        $map = new Sitemap('foo');
         $lastMod = DateTime::createFromFormat('Y-m-d H:i:s', '2018-01-01 12:00:00');
-        $map->addUri(new Uri('/test'), $lastMod, 'never', 0.9);
+        $this->map->addUri(new Uri('/test'), $lastMod, 'never', 0.9);
 
         $file = __DIR__ . '/data/basic-sitemap.xml';
-        $this->assertXmlStringEqualsXmlFile($file, $map->toXmlString());
-        $this->assertXmlStringEqualsXmlFile($file, $map->toXmlString());
+        $this->assertXmlStringEqualsXmlFile($file, $this->map->toXmlString());
+        $this->assertXmlStringEqualsXmlFile($file, $this->map->toXmlString());
     }
 
     public function testAddingUrisAfterRenderWillCauseReRender()
     {
-        $map = new Sitemap('foo');
         $lastMod = DateTime::createFromFormat('Y-m-d H:i:s', '2018-01-01 12:00:00');
-        $map->addUri(new Uri('/test'), $lastMod, 'never', 0.9);
+        $this->map->addUri(new Uri('/test'), $lastMod, 'never', 0.9);
 
         $file = __DIR__ . '/data/basic-sitemap.xml';
-        $this->assertXmlStringEqualsXmlFile($file, $map->toXmlString());
+        $this->assertXmlStringEqualsXmlFile($file, $this->map->toXmlString());
 
         $lastMod = DateTime::createFromFormat('Y-m-d H:i:s', '2018-01-02 12:00:00');
-        $map->addUri(new Uri('/test2'), $lastMod, 'always', 0.1);
+        $this->map->addUri(new Uri('/test2'), $lastMod, 'always', 0.1);
 
         $file = __DIR__ . '/data/sitemap-with-2-uris.xml';
-        $this->assertXmlStringEqualsXmlFile($file, $map->toXmlString());
+        $this->assertXmlStringEqualsXmlFile($file, $this->map->toXmlString());
     }
 
     public function testToArrayReturnsArray()
     {
-        $map = new Sitemap('foo');
-        $value = $map->toArray();
+        $value = $this->map->toArray();
         $this->assertInternalType('array', $value);
         $this->assertCount(0, $value);
 
         $lastMod = DateTime::createFromFormat('Y-m-d H:i:s', '2018-01-01 12:00:00');
-        $map->addUri(new Uri('/test'), $lastMod, 'never', 0.9);
+        $this->map->addUri(new Uri('/test'), $lastMod, 'never', 0.9);
 
-        $value = $map->toArray();
+        $value = $this->map->toArray();
         $this->assertInternalType('array', $value);
         $this->assertCount(1, $value);
     }
 
     public function testToStringReturnsXmlValue()
     {
-        $map = new Sitemap('foo');
-        $string = (string) $map;
+        $string = (string) $this->map;
 
-        $this->assertSame($map->toXmlString(), $string);
+        $this->assertSame($this->map->toXmlString(), $string);
     }
 
 }
