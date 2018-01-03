@@ -135,4 +135,12 @@ class SitemapTest extends TestCase
         $this->assertSame('http://localhost/test/strings', $urls[0]['loc']);
     }
 
+    /**
+     * @expectedException Netglue\Sitemap\Exception\InvalidArgumentException
+     */
+    public function testAddUriThrowsExceptionForInvalidType()
+    {
+        $this->map->addUri([]);
+    }
+
 }

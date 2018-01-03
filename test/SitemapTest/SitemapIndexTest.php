@@ -115,4 +115,13 @@ class SitemapIndexTest extends TestCase
         $this->assertSame('http://localhost/test', $url['loc']);
     }
 
+    /**
+     * @expectedException Netglue\Sitemap\Exception\InvalidArgumentException
+     */
+    public function testAddUriThrowsExceptionForInvalidType()
+    {
+        $index = new SitemapIndex('http://localhost');
+        $index->addUri([]);
+    }
+
 }

@@ -62,7 +62,11 @@ class Sitemap implements Countable
 
     public function addUri($uri, ?DateTimeInterface $lastMod = null, ?string $changeFreq = null, ?float $priority = null) : void
     {
-        $url = (string) Uri::merge($this->baseUrl, $uri);
+        try {
+            $url = (string) Uri::merge($this->baseUrl, $uri);
+        } catch (UriException $e) {
+            throw new Exception\InvalidArgumentException('URIs must be strings or Zend\Uri instances', 0, $e);
+        }
         $payload = [
             'loc' => $url
         ];

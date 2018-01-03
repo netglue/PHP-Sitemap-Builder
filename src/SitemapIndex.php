@@ -78,7 +78,11 @@ class SitemapIndex
 
     public function addUri($uri, ?DateTimeInterface $lastMod = null, ?string $changeFreq = null, ?float $priority = null) : void
     {
-        $uri = Uri::merge($this->baseUrl, $uri);
+        try {
+            $uri = Uri::merge($this->baseUrl, $uri);
+        } catch (UriException $e) {
+            throw new Exception\InvalidArgumentException('URIs must be strings or Zend\Uri instances', 0, $e);
+        }
         $sitemap = $this->getSitemap();
         $sitemap->addUri($uri, $lastMod, $changeFreq, $priority);
         $this->lastMod($lastMod);
