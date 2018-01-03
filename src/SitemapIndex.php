@@ -76,7 +76,7 @@ class SitemapIndex
         return sprintf('sitemap-%d.xml', $index);
     }
 
-    public function addUri(string $uri, ?DateTimeInterface $lastMod = null, ?string $changeFreq = null, ?float $priority = null) : void
+    public function addUri($uri, ?DateTimeInterface $lastMod = null, ?string $changeFreq = null, ?float $priority = null) : void
     {
         $uri = Uri::merge($this->baseUrl, $uri);
         $sitemap = $this->getSitemap();
@@ -84,7 +84,7 @@ class SitemapIndex
         $this->lastMod($lastMod);
     }
 
-    private function lastMod(?DateTimeInterface $lastMod = null)
+    private function lastMod(?DateTimeInterface $lastMod = null) : ?DateTimeInterface
     {
         if (!$this->lastMod && $lastMod) {
             $this->lastMod = clone $lastMod;

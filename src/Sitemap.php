@@ -60,7 +60,7 @@ class Sitemap implements Countable
         return count($this->locations);
     }
 
-    public function addUri(UriInterface $uri, ?DateTimeInterface $lastMod = null, ?string $changeFreq = null, ?float $priority = null) : void
+    public function addUri($uri, ?DateTimeInterface $lastMod = null, ?string $changeFreq = null, ?float $priority = null) : void
     {
         $url = (string) Uri::merge($this->baseUrl, $uri);
         $payload = [
@@ -97,7 +97,7 @@ class Sitemap implements Countable
         return $this->xmlString;
     }
 
-    private function getWriter()
+    private function getWriter() : XMLWriter
     {
         if (!$this->writer) {
             $this->writer = new XMLWriter;

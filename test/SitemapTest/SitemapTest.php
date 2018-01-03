@@ -47,6 +47,16 @@ class SitemapTest extends TestCase
         $this->assertCount(1, $this->map);
     }
 
+    public function testDuplicateUrisDoesNotIncreaseCount()
+    {
+        $this->map->addUri('/test');
+        $this->assertCount(1, $this->map);
+        $this->map->addUri('/test');
+        $this->assertCount(1, $this->map);
+        $this->map->addUri('http://localhost/test');
+        $this->assertCount(1, $this->map);
+    }
+
     public function testXmlIsRenderedWithZeroUrls()
     {
         $expect = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>';
@@ -106,6 +116,23 @@ class SitemapTest extends TestCase
         $string = (string) $this->map;
 
         $this->assertSame($this->map->toXmlString(), $string);
+    }
+
+    public function testBaseUrlIsPrependedWhenAppropriate()
+    {
+        $this->map->addUri(new Uri('/test'));
+        $this->map->addUri(new Uri('http://www.example.com/test'));
+
+        $urls = $this->map->toArray();
+        $this->assertSame('http://localhost/test', $urls[0]['loc']);
+        $this->assertSame('http://www.example.com/test', $urls[1]['loc']);
+    }
+
+    public function testAddUriAcceptsStringUri()
+    {
+        $this->map->addUri('/test/strings');
+        $urls = $this->map->toArray();
+        $this->assertSame('http://localhost/test/strings', $urls[0]['loc']);
     }
 
 }
