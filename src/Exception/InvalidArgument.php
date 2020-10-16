@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace Netglue\Sitemap\Exception;
 
-class InvalidArgument extends \InvalidArgumentException
+use InvalidArgumentException;
+
+class InvalidArgument extends InvalidArgumentException
 {
 }
