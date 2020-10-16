@@ -1,8 +1,5 @@
 # Another Sitemap Builder Utility in PHP
 
-[![Coverage Status](https://coveralls.io/repos/github/netglue/PHP-Sitemap-Builder/badge.svg?branch=master)](https://coveralls.io/github/netglue/PHP-Sitemap-Builder?branch=master)
-[![Build Status](https://travis-ci.org/netglue/PHP-Sitemap-Builder.svg?branch=master)](https://travis-ci.org/netglue/PHP-Sitemap-Builder)
-
 ## Why?
 
 It's pretty easy to make an XML sitemap and there's lots of utilities out there, but these tend to concentrate on persisting the xml to disk. If you're running your app on a handful of servers, disks are a pain in the ass.
@@ -42,7 +39,7 @@ If you have no need of a sitemap index file, i.e. you're never going to have mor
 The signature for `Sitemap::addUri()` is:
     
     Sitemap::addUri(
-        \Zend\Uri\UriInterface|string $uri,
+        \Laminas\Uri\UriInterface|string $uri,
         ?\DateTimeInterface $lastMod = null,
         ?string $changeFreq = null,
         ?float $priority = null

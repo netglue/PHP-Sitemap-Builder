@@ -1,91 +1,80 @@
 <?php
-/**
- * @see       https://github.com/netglue/PHP-Sitemap-Builder for the canonical source repository
- * @copyright Copyright (c) 2018 Netglue Ltd. (https://netglue.uk)
- * @license   https://github.com/netglue/PHP-Sitemap-Builder/blob/master/LICENSE.md MIT License
- */
 
 declare(strict_types=1);
 
 namespace Netglue\SitemapTest;
 
-use PHPUnit\Framework\TestCase;
-use Netglue\Sitemap\SitemapIndex;
 use DateTime;
+use Netglue\Sitemap\Exception\InvalidArgument;
+use Netglue\Sitemap\SitemapIndex;
+use PHPUnit\Framework\TestCase;
+
+use function current;
 
 class SitemapIndexTest extends TestCase
 {
-
-    /**
-     * @expectedException Netglue\Sitemap\Exception\InvalidArgumentException
-     */
-    public function testInvalidBaseUrlTriggersException()
+    public function testInvalidBaseUrlTriggersException(): void
     {
-        $index = new SitemapIndex(':::');
+        $this->expectException(InvalidArgument::class);
+        new SitemapIndex(':::');
     }
 
-    /**
-     * @expectedException Netglue\Sitemap\Exception\InvalidArgumentException
-     */
-    public function testNonAbsoluteBaseUrlTriggersException()
+    public function testNonAbsoluteBaseUrlTriggersException(): void
     {
-        $index = new SitemapIndex('/foo');
+        $this->expectException(InvalidArgument::class);
+        new SitemapIndex('/foo');
     }
 
-    public function testMissingPathIsAppendedToBaseUrl()
+    public function testMissingPathIsAppendedToBaseUrl(): void
     {
         $index = new SitemapIndex('http://localhost');
-        $this->assertSame('http://localhost/', $index->getBaseUrl());
+        self::assertSame('http://localhost/', $index->getBaseUrl());
     }
 
-    public function testZeroSitemapsWillStillRenderIndex()
+    public function testZeroSitemapsWillStillRenderIndex(): void
     {
         $index = new SitemapIndex('http://localhost');
         $xml = $index->toXmlString();
-        $this->assertXmlStringEqualsXmlString(
+        self::assertXmlStringEqualsXmlString(
             '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>',
             $xml
         );
     }
 
-    /**
-     * @expectedException Netglue\Sitemap\Exception\InvalidArgumentException
-     */
-    public function testExceptionThrownForInvalidMaxEntries()
+    public function testExceptionThrownForInvalidMaxEntries(): void
     {
-        $index = new SitemapIndex('http://localhost');
-        $index->setMaxEntriesPerSitemap(-10);
+        $this->expectException(InvalidArgument::class);
+        new SitemapIndex('http://localhost', -10);
     }
 
-    public function testAddingUrlWillCreateSitemapInstance()
+    public function testAddingUrlWillCreateSitemapInstance(): void
     {
         $index = new SitemapIndex('http://localhost');
         $index->addUri('/test');
-        $this->assertCount(1, $index->getSitemaps());
+        self::assertCount(1, $index->getSitemaps());
     }
 
-    public function testSitemapsIncrementedOnMaxCountMet()
+    public function testSitemapsIncrementedOnMaxCountMet(): void
     {
-        $index = new SitemapIndex('http://localhost');
-        $this->assertCount(0, $index->getSitemaps());
-        $index->setMaxEntriesPerSitemap(1);
+        $index = new SitemapIndex('http://localhost', 1);
+        self::assertCount(0, $index->getSitemaps());
         $index->addUri('/test');
-        $this->assertCount(1, $index->getSitemaps());
+        self::assertCount(1, $index->getSitemaps());
         $index->addUri('/test2');
-        $this->assertCount(2, $index->getSitemaps());
+        self::assertCount(2, $index->getSitemaps());
     }
 
-    public function testSitemapIndexOutputsExpectedXml()
+    public function testSitemapIndexOutputsExpectedXml(): void
     {
         $lastMod = DateTime::createFromFormat('Y-m-d', '2018-01-01');
         $index = new SitemapIndex('http://localhost');
         $index->addUri('/test', $lastMod);
         $xml = $index->toXmlString();
         $file = __DIR__ . '/data/basic-expected-index.xml';
-        $this->assertXmlStringEqualsXmlFile($file, $xml);
+        self::assertXmlStringEqualsXmlFile($file, $xml);
     }
 
-    public function testLastModIsSetToMostRecentUri()
+    public function testLastModIsSetToMostRecentUri(): void
     {
         $index = new SitemapIndex('http://localhost');
 
@@ -97,39 +86,37 @@ class SitemapIndexTest extends TestCase
 
         $file = __DIR__ . '/data/lastmod-set-to-most-recent-uri.xml';
 
-        $this->assertXmlStringEqualsXmlFile($file, $index->toXmlString());
+        self::assertXmlStringEqualsXmlFile($file, $index->toXmlString());
     }
 
-    public function testToStringReturnsXmlValue()
+    public function testToStringReturnsXmlValue(): void
     {
         $index = new SitemapIndex('http://localhost');
         $string = (string) $index;
 
-        $this->assertSame($index->toXmlString(), $string);
+        self::assertSame($index->toXmlString(), $string);
     }
 
-    public function testAbsoluteUrlIsPrependedToRelativeUrls()
+    public function testAbsoluteUrlIsPrependedToRelativeUrls(): void
     {
         $index = new SitemapIndex('http://localhost');
         $index->addUri('/test');
 
         $sitemaps = $index->getSitemaps();
-        $this->assertCount(1, $sitemaps);
+        self::assertCount(1, $sitemaps);
         $map = current($sitemaps);
 
         $locations = $map->toArray();
-        $this->assertCount(1, $locations);
+        self::assertCount(1, $locations);
 
         $url = current($locations);
-        $this->assertSame('http://localhost/test', $url['loc']);
+        self::assertSame('http://localhost/test', $url['loc']);
     }
 
-    /**
-     * @expectedException Netglue\Sitemap\Exception\InvalidArgumentException
-     */
-    public function testAddUriThrowsExceptionForInvalidType()
+    public function testAddUriThrowsExceptionForInvalidType(): void
     {
         $index = new SitemapIndex('http://localhost');
+        $this->expectException(InvalidArgument::class);
         $index->addUri([]);
     }
 }

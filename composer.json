@@ -13,15 +13,13 @@
         "sort-packages": true
     },
     "require": {
-        "php": ">=7.1",
+        "php": ">=7.3",
         "ext-xmlwriter": "*",
-        "zendframework/zend-uri": "^2.5"
+        "laminas/laminas-uri": "^2.7"
     },
     "require-dev": {
-        "malukenho/docheader": "^0.1.7",
-        "php-coveralls/php-coveralls": "^2.0",
-        "phpunit/phpunit": "^6.5",
-        "zendframework/zend-coding-standard": "~1.0.0"
+        "doctrine/coding-standard": "^8.1",
+        "phpunit/phpunit": "^9.4"
     },
     "autoload": {
         "psr-4": {
@@ -39,10 +37,8 @@
             "@cs-check",
             "@test"
         ],
-        "upload-coverage": "php-coveralls -v",
         "cs-check": "phpcs --colors",
         "cs-fix": "phpcbf --colors",
-        "license-check": "docheader check src/ test/",
         "test": "phpunit --colors=always",
         "test-coverage": "phpunit --coverage-clover build/clover.xml"
     }

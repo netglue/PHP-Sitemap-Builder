@@ -1,17 +1,21 @@
 <?php
-/**
- * @see       https://github.com/netglue/PHP-Sitemap-Builder for the canonical source repository
- * @copyright Copyright (c) 2018 Netglue Ltd. (https://netglue.uk)
- * @license   https://github.com/netglue/PHP-Sitemap-Builder/blob/master/LICENSE.md MIT License
- */
 
 declare(strict_types=1);
 
 namespace Netglue\Sitemap\Writer;
 
+use Netglue\Sitemap\Exception;
 use Netglue\Sitemap\Sitemap;
 use Netglue\Sitemap\SitemapIndex;
-use Netglue\Sitemap\Exception;
+
+use function basename;
+use function file_put_contents;
+use function is_dir;
+use function is_writable;
+use function rtrim;
+use function sprintf;
+
+use const DIRECTORY_SEPARATOR;
 
 class FileWriter
 {
@@ -25,17 +29,17 @@ class FileWriter
         $this->path = $path;
     }
 
-    private function assertWritableDirectory(string $path)
+    private function assertWritableDirectory(string $path): void
     {
         if (! is_dir($path) || ! is_writable($path)) {
-            throw new Exception\InvalidArgumentException(sprintf(
+            throw new Exception\InvalidArgument(sprintf(
                 'The given path `%s` is not a writable directory',
                 $path
             ));
         }
     }
 
-    public function writeIndex(SitemapIndex $index, string $filename = 'sitemap-index.xml')
+    public function writeIndex(SitemapIndex $index, string $filename = 'sitemap-index.xml'): void
     {
         $path = sprintf(
             '%s%s%s',
@@ -50,11 +54,9 @@ class FileWriter
         }
     }
 
-    public function writeSitemap(Sitemap $sitemap, ?string $filename = null)
+    public function writeSitemap(Sitemap $sitemap, ?string $filename = null): void
     {
-        $filename = $filename
-                  ? $filename
-                  : $sitemap->getName();
+        $filename = $filename ?: $sitemap->getName();
 
         $path = sprintf(
             '%s%s%s',
