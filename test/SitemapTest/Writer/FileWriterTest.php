@@ -1,102 +1,109 @@
 <?php
-/**
- * @see       https://github.com/netglue/PHP-Sitemap-Builder for the canonical source repository
- * @copyright Copyright (c) 2018 Netglue Ltd. (https://netglue.uk)
- * @license   https://github.com/netglue/PHP-Sitemap-Builder/blob/master/LICENSE.md MIT License
- */
 
 declare(strict_types=1);
 
 namespace Netglue\SitemapTest\Writer;
 
-use PHPUnit\Framework\TestCase;
+use Netglue\Sitemap\Exception\InvalidArgument;
 use Netglue\Sitemap\Sitemap;
 use Netglue\Sitemap\SitemapIndex;
 use Netglue\Sitemap\Writer\FileWriter;
-use DateTime;
-use Zend\Uri\Uri;
-use Netglue\Sitemap\Exception\InvalidArgumentException;
+use PHPUnit\Framework\TestCase;
+
+use function chmod;
+use function closedir;
+use function mkdir;
+use function opendir;
+use function preg_match;
+use function readdir;
+use function rmdir;
+use function touch;
+use function unlink;
+
+use const DIRECTORY_SEPARATOR;
 
 class FileWriterTest extends TestCase
 {
+    /** @var string */
     private $dir;
-
+    /** @var FileWriter */
     private $writer;
 
-    public function setUp()
+    public function setUp(): void
     {
         $this->dir = __DIR__ . '/tmp';
         mkdir($this->dir);
         $this->writer = new FileWriter($this->dir);
     }
 
-    public function tearDown()
+    public function tearDown(): void
     {
         $dh = opendir($this->dir);
         while (($file = readdir($dh)) !== false) {
-            if (preg_match('/\.xml$/', $file)) {
-                unlink($this->dir . DIRECTORY_SEPARATOR . $file);
+            if (! preg_match('/\.xml$/', $file)) {
+                continue;
             }
+
+            unlink($this->dir . DIRECTORY_SEPARATOR . $file);
         }
+
         closedir($dh);
         rmdir($this->dir);
     }
 
-    public function testWriteIndex()
+    public function testWriteIndex(): void
     {
         $index = new SitemapIndex('http://localhost');
         $index->addUri('/foo');
 
         $this->writer->writeIndex($index);
 
-        $this->assertTrue(file_exists($this->dir . DIRECTORY_SEPARATOR . 'sitemap-index.xml'));
-        $this->assertTrue(file_exists($this->dir . DIRECTORY_SEPARATOR . 'sitemap-0.xml'));
+        self::assertFileExists($this->dir . DIRECTORY_SEPARATOR . 'sitemap-index.xml');
+        self::assertFileExists($this->dir . DIRECTORY_SEPARATOR . 'sitemap-0.xml');
     }
 
-    public function testIndexIsWrittenWithCustomFilename()
+    public function testIndexIsWrittenWithCustomFilename(): void
     {
         $index = new SitemapIndex('http://localhost');
 
         $this->writer->writeIndex($index, 'custom.xml');
-        $this->assertTrue(file_exists($this->dir . DIRECTORY_SEPARATOR . 'custom.xml'));
-        $this->assertFalse(file_exists($this->dir . DIRECTORY_SEPARATOR . 'sitemap-0.xml'));
+        self::assertFileExists($this->dir . DIRECTORY_SEPARATOR . 'custom.xml');
+        self::assertFileDoesNotExist($this->dir . DIRECTORY_SEPARATOR . 'sitemap-0.xml');
     }
 
-    public function testSitemapIsWrittenWithConstructorFilename()
+    public function testSitemapIsWrittenWithConstructorFilename(): void
     {
         $map = new Sitemap('name1.xml', 'http://localhost');
         $this->writer->writeSitemap($map);
 
-        $this->assertTrue(file_exists($this->dir . DIRECTORY_SEPARATOR . 'name1.xml'));
+        self::assertFileExists($this->dir . DIRECTORY_SEPARATOR . 'name1.xml');
     }
 
-    public function testSitemapIsWrittenWithCustomFilename()
+    public function testSitemapIsWrittenWithCustomFilename(): void
     {
         $map = new Sitemap('name1.xml', 'http://localhost');
         $this->writer->writeSitemap($map, 'custom.xml');
 
-        $this->assertTrue(file_exists($this->dir . DIRECTORY_SEPARATOR . 'custom.xml'));
-        $this->assertFalse(file_exists($this->dir . DIRECTORY_SEPARATOR . 'name1.xml'));
+        self::assertFileExists($this->dir . DIRECTORY_SEPARATOR . 'custom.xml');
+        self::assertFileDoesNotExist($this->dir . DIRECTORY_SEPARATOR . 'name1.xml');
     }
 
-    /**
-     * @expectedException Netglue\Sitemap\Exception\InvalidArgumentException
-     */
-    public function testExceptionIsThrownForNonDirectory()
+    public function testExceptionIsThrownForNonDirectory(): void
     {
         $file = $this->dir . DIRECTORY_SEPARATOR . 'file.xml';
         touch($file);
-        $writer = new FileWriter($file);
+        $this->expectException(InvalidArgument::class);
+        new FileWriter($file);
     }
 
-    public function testExceptionThrownForUnwritableDirectory()
+    public function testExceptionThrownForUnWritableDirectory(): void
     {
         chmod($this->dir, 0500);
         try {
-            $writer = new FileWriter($this->dir);
-            $this->fail('No exception was thrown');
-        } catch (InvalidArgumentException $e) {
-            $this->assertInstanceOf(InvalidArgumentException::class, $e);
+            new FileWriter($this->dir);
+            self::fail('No exception was thrown');
+        } catch (InvalidArgument $e) {
+            self::assertInstanceOf(InvalidArgument::class, $e);
         } finally {
             chmod($this->dir, 0700);
         }
