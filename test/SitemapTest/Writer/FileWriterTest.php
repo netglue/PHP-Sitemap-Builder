@@ -8,8 +8,10 @@ use Netglue\Sitemap\Exception\InvalidArgument;
 use Netglue\Sitemap\Sitemap;
 use Netglue\Sitemap\SitemapIndex;
 use Netglue\Sitemap\Writer\FileWriter;
+use Override;
 use PHPUnit\Framework\TestCase;
 
+use function assert;
 use function chmod;
 use function closedir;
 use function mkdir;
@@ -22,13 +24,12 @@ use function unlink;
 
 use const DIRECTORY_SEPARATOR;
 
-class FileWriterTest extends TestCase
+final class FileWriterTest extends TestCase
 {
-    /** @var string */
-    private $dir;
-    /** @var FileWriter */
-    private $writer;
+    private string $dir;
+    private FileWriter $writer;
 
+    #[Override]
     public function setUp(): void
     {
         $this->dir = __DIR__ . '/tmp';
@@ -36,9 +37,11 @@ class FileWriterTest extends TestCase
         $this->writer = new FileWriter($this->dir);
     }
 
+    #[Override]
     public function tearDown(): void
     {
         $dh = opendir($this->dir);
+        assert($dh !== false);
         while (($file = readdir($dh)) !== false) {
             if (! preg_match('/\.xml$/', $file)) {
                 continue;

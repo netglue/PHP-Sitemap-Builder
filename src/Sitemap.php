@@ -6,10 +6,9 @@ namespace Netglue\Sitemap;
 
 use Countable;
 use DateTimeInterface;
-use Laminas\Uri\Exception\ExceptionInterface as UriException;
-use Laminas\Uri\Uri;
-use Laminas\Uri\UriInterface;
+use League\Uri\Uri;
 use Netglue\Sitemap\Exception\InvalidArgument;
+use Override;
 use XMLWriter;
 
 use function array_values;
@@ -19,10 +18,17 @@ use function sprintf;
 
 use const DATE_W3C;
 
-class Sitemap implements Countable
+/**
+ * @psalm-type LocShape = array{
+ *     loc: string,
+ *     lastmod?: string,
+ *     changefreq?: string,
+ *     priority?: string,
+ * }
+ */
+final class Sitemap implements Countable
 {
-    /** @var string[] */
-    private static $changeFreq = [
+    private const CHANGE_FREQ = [
         'always',
         'hourly',
         'daily',
@@ -32,75 +38,67 @@ class Sitemap implements Countable
         'never',
     ];
 
-    /** @var array<string, string[]|float[]> */
-    private $locations = [];
+    /** @var array<string, LocShape> */
+    private array $locations = [];
+    private readonly Uri $baseUrl;
 
-    /** @var string */
-    private $name;
-
-    /** @var UriInterface */
-    private $baseUrl;
-
-    public function __construct(string $name, string $baseUrl)
+    /** @param non-empty-string $name */
+    public function __construct(private readonly string $name, string $baseUrl)
     {
-        $this->name = $name;
-        $this->setBaseUrl($baseUrl);
-    }
-
-    private function setBaseUrl(string $url): void
-    {
-        $uri = new Uri($url);
+        $uri = Uri::new($baseUrl);
         if (! $uri->isAbsolute()) {
             throw new InvalidArgument(
-                'Base URL must include scheme and host, i.e. https://example.com'
+                'Base URL must include scheme and host, i.e. https://example.com',
             );
         }
 
-        $this->baseUrl = $uri;
-        if (! empty($this->baseUrl->getPath())) {
-            return;
+        if ($uri->getPath() === '') {
+            $uri = $uri->withPath('/');
         }
 
-        $this->baseUrl->setPath('/');
+        $this->baseUrl = $uri;
     }
 
+    /** @return non-empty-string */
     public function getName(): string
     {
         return $this->name;
     }
 
+    #[Override]
     public function count(): int
     {
         return count($this->locations);
     }
 
-    /** @param Uri|string $uri */
     public function addUri(
-        $uri,
-        ?DateTimeInterface $lastMod = null,
-        ?string $changeFreq = null,
-        ?float $priority = null
+        string $uri,
+        DateTimeInterface|null $lastMod = null,
+        string|null $changeFreq = null,
+        float|null $priority = null,
     ): void {
-        try {
-            $url = (string) Uri::merge($this->baseUrl, $uri);
-        } catch (UriException $e) {
-            throw new InvalidArgument('URIs must be strings or Laminas\Uri instances', 0, $e);
+        $uri = Uri::new($uri);
+
+        if ($uri->getHost() === null) {
+            $uri = $this->baseUrl->withPath($uri->getPath())
+                ->withQuery($uri->getQuery())
+                ->withPort($uri->getPort());
         }
 
-        $payload = ['loc' => $url];
-        if ($lastMod) {
+        $payload = ['loc' => $uri->toString()];
+        if ($lastMod !== null) {
             $payload['lastmod'] = $lastMod->format(DATE_W3C);
         }
 
-        if ($changeFreq) {
+        if ($changeFreq !== null) {
             $payload['changefreq'] = $this->changeFreq($changeFreq);
         }
 
-        if ($priority) {
+        if ($priority !== null) {
             $payload['priority'] = sprintf('%0.2f', $this->priority($priority));
         }
 
-        $this->locations[$url] = $payload;
+        $this->locations[$uri->toString()] = $payload;
     }
 
     public function toXmlString(): string
@@ -123,12 +121,12 @@ class Sitemap implements Countable
         $writer->endElement();
         $writer->endDocument();
 
-        return $writer->outputMemory(true);
+        return $writer->outputMemory();
     }
 
     private function changeFreq(string $changeFreq): string
     {
-        if (! in_array($changeFreq, static::$changeFreq, true)) {
+        if (! in_array($changeFreq, self::CHANGE_FREQ, true)) {
             throw new InvalidArgument(sprintf('Invalid change frequency value "%s"', $changeFreq));
         }
 
@@ -140,7 +138,7 @@ class Sitemap implements Countable
         if ($priority > 1 || $priority < 0) {
             throw new InvalidArgument(sprintf(
                 'Priority must be a decimal between 0 and 1. Received "%0.2f"',
-                $priority
+                $priority,
             ));
         }
 
@@ -152,7 +150,7 @@ class Sitemap implements Countable
         return $this->toXmlString();
     }
 
-    /** @return mixed[][] */
+    /** @return list<LocShape> */
     public function toArray(): array
     {
         return array_values($this->locations);

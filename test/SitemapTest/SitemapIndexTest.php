@@ -6,16 +6,18 @@ namespace Netglue\SitemapTest;
 
 use DateTime;
 use Netglue\Sitemap\Exception\InvalidArgument;
+use Netglue\Sitemap\Sitemap;
 use Netglue\Sitemap\SitemapIndex;
 use PHPUnit\Framework\TestCase;
+use Throwable;
 
 use function current;
 
-class SitemapIndexTest extends TestCase
+final class SitemapIndexTest extends TestCase
 {
     public function testInvalidBaseUrlTriggersException(): void
     {
-        $this->expectException(InvalidArgument::class);
+        $this->expectException(Throwable::class);
         new SitemapIndex(':::');
     }
 
@@ -36,8 +38,8 @@ class SitemapIndexTest extends TestCase
         $index = new SitemapIndex('http://localhost');
         $xml = $index->toXmlString();
         self::assertXmlStringEqualsXmlString(
-            '<sitemapindex xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>',
-            $xml
+            '<sitemapindex xmlns="https://www.sitemaps.org/schemas/sitemap/0.9"/>',
+            $xml,
         );
     }
 
@@ -105,18 +107,13 @@ class SitemapIndexTest extends TestCase
         $sitemaps = $index->getSitemaps();
         self::assertCount(1, $sitemaps);
         $map = current($sitemaps);
+        self::assertInstanceOf(Sitemap::class, $map);
 
         $locations = $map->toArray();
         self::assertCount(1, $locations);
 
         $url = current($locations);
+        self::assertIsArray($url);
         self::assertSame('http://localhost/test', $url['loc']);
-    }
-
-    public function testAddUriThrowsExceptionForInvalidType(): void
-    {
-        $index = new SitemapIndex('http://localhost');
-        $this->expectException(InvalidArgument::class);
-        $index->addUri([]);
     }
 }

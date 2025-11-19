@@ -17,10 +17,9 @@ use function sprintf;
 
 use const DIRECTORY_SEPARATOR;
 
-class FileWriter
+final class FileWriter
 {
-    /** @var string */
-    private $path;
+    private string $path;
 
     public function __construct(string $path)
     {
@@ -34,7 +33,7 @@ class FileWriter
         if (! is_dir($path) || ! is_writable($path)) {
             throw new Exception\InvalidArgument(sprintf(
                 'The given path `%s` is not a writable directory',
-                $path
+                $path,
             ));
         }
     }
@@ -45,7 +44,7 @@ class FileWriter
             '%s%s%s',
             $this->path,
             DIRECTORY_SEPARATOR,
-            basename($filename)
+            basename($filename),
         );
 
         file_put_contents($path, (string) $index);
@@ -54,15 +53,16 @@ class FileWriter
         }
     }
 
-    public function writeSitemap(Sitemap $sitemap, ?string $filename = null): void
+    /** @param non-empty-string|null $filename */
+    public function writeSitemap(Sitemap $sitemap, string|null $filename = null): void
     {
-        $filename = $filename ?: $sitemap->getName();
+        $filename = basename($filename ?? $sitemap->getName());
 
         $path = sprintf(
             '%s%s%s',
             $this->path,
             DIRECTORY_SEPARATOR,
-            basename($filename)
+            $filename,
         );
 
         file_put_contents($path, (string) $sitemap);

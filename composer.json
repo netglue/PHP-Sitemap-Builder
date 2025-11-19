@@ -10,16 +10,25 @@
         }
     ],
     "config": {
-        "sort-packages": true
+        "sort-packages": true,
+        "allow-plugins": {
+            "dealerdirect/phpcodesniffer-composer-installer": true
+        },
+        "platform": {
+            "php": "8.2.99"
+        }
     },
     "require": {
-        "php": ">=7.3",
+        "php": "~8.2 || ~8.3 || ~8.4 || ~8.5",
+        "ext-intl": "*",
         "ext-xmlwriter": "*",
-        "laminas/laminas-uri": "^2.7"
+        "league/uri": "^7.6"
     },
     "require-dev": {
-        "doctrine/coding-standard": "^8.1",
-        "phpunit/phpunit": "^9.4"
+        "doctrine/coding-standard": "^14.0.0",
+        "phpunit/phpunit": "^11.5.44",
+        "psalm/plugin-phpunit": "^0.19.5",
+        "vimeo/psalm": "^6.13"
     },
     "autoload": {
         "psr-4": {
