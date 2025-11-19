@@ -5,16 +5,13 @@
     <arg name="parallel" value="80"/>
     <arg name="cache" value=".php_cs.cache"/>
     <arg name="colors"/>
+    <arg value="ps"/>
 
     <file>src</file>
     <file>test</file>
 
     <!-- Inherit rules from Doctrine Coding Standard -->
-    <rule ref="Doctrine">
-        <!-- Whilst this lib is compatible with 7.3, exclude these sniffs -->
-        <exclude name="SlevomatCodingStandard.TypeHints.PropertyTypeHint.MissingNativeTypeHint" />
-        <exclude name="SlevomatCodingStandard.ControlStructures.RequireNullCoalesceEqualOperator.RequiredNullCoalesceEqualOperator" />
-    </rule>
+    <rule ref="Doctrine" />
 
     <rule ref="Generic.Formatting.MultipleStatementAlignment.NotSame">
         <severity>0</severity>

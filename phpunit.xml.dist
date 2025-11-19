@@ -2,10 +2,22 @@
 <phpunit xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
          xsi:noNamespaceSchemaLocation="vendor/phpunit/phpunit/phpunit.xsd"
          bootstrap="vendor/autoload.php"
-         colors="true">
+         colors="true"
+         displayDetailsOnAllIssues="true"
+         failOnPhpunitWarning="true"
+         failOnPhpunitDeprecation="true"
+         failOnDeprecation="true"
+         failOnNotice="true"
+         failOnWarning="true"
+>
     <testsuites>
         <testsuite name="Sitemap-Tests">
             <directory>./test</directory>
         </testsuite>
     </testsuites>
+    <source ignoreIndirectDeprecations="true">
+        <include>
+            <directory>src</directory>
+        </include>
+    </source>
 </phpunit>

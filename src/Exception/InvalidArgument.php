@@ -6,6 +6,6 @@ namespace Netglue\Sitemap\Exception;
 
 use InvalidArgumentException;
 
-class InvalidArgument extends InvalidArgumentException
+final class InvalidArgument extends InvalidArgumentException
 {
 }

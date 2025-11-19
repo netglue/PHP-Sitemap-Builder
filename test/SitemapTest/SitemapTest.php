@@ -5,19 +5,25 @@ declare(strict_types=1);
 namespace Netglue\SitemapTest;
 
 use DateTime;
-use Laminas\Uri\Uri;
 use Netglue\Sitemap\Exception\InvalidArgument;
 use Netglue\Sitemap\Sitemap;
+use Override;
 use PHPUnit\Framework\TestCase;
 
-class SitemapTest extends TestCase
+final class SitemapTest extends TestCase
 {
-    /** @var Sitemap */
-    private $map;
+    private Sitemap $map;
 
+    #[Override]
     public function setUp(): void
     {
         $this->map = new Sitemap('sitemap.xml', 'http://localhost');
+    }
+
+    public function testTheBaseUriMustBeAbsolute(): void
+    {
+        $this->expectException(InvalidArgument::class);
+        new Sitemap('sitemap.xml', '/foo');
     }
 
     public function testInitialInstance(): void
@@ -29,18 +35,18 @@ class SitemapTest extends TestCase
     public function testExceptionThrownForInvalidChangeFreq(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->map->addUri(new Uri('/test'), null, 'nope');
+        $this->map->addUri('/test', null, 'nope');
     }
 
     public function testExceptionThrownForInvalidPriority(): void
     {
         $this->expectException(InvalidArgument::class);
-        $this->map->addUri(new Uri('/test'), null, 'never', 1.5);
+        $this->map->addUri('/test', null, 'never', 1.5);
     }
 
     public function testValidUriIncreasesCount(): void
     {
-        $this->map->addUri(new Uri('/test'), null, 'never', 0.9);
+        $this->map->addUri('/test', null, 'never', 0.9);
         self::assertCount(1, $this->map);
     }
 
@@ -56,14 +62,14 @@ class SitemapTest extends TestCase
 
     public function testXmlIsRenderedWithZeroUrls(): void
     {
-        $expect = '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9"/>';
+        $expect = '<urlset xmlns="https://www.sitemaps.org/schemas/sitemap/0.9"/>';
         self::assertXmlStringEqualsXmlString($expect, $this->map->toXmlString());
     }
 
     public function testExpectedXmlOutput(): void
     {
         $lastMod = DateTime::createFromFormat('Y-m-d H:i:s', '2018-01-01 12:00:00');
-        $this->map->addUri(new Uri('/test'), $lastMod, 'never', 0.9);
+        $this->map->addUri('/test', $lastMod, 'never', 0.9);
 
         $file = __DIR__ . '/data/basic-sitemap.xml';
         self::assertXmlStringEqualsXmlFile($file, $this->map->toXmlString());
@@ -72,7 +78,7 @@ class SitemapTest extends TestCase
     public function testSuccessiveCallsToOutputReturnsTheSameValue(): void
     {
         $lastMod = DateTime::createFromFormat('Y-m-d H:i:s', '2018-01-01 12:00:00');
-        $this->map->addUri(new Uri('/test'), $lastMod, 'never', 0.9);
+        $this->map->addUri('/test', $lastMod, 'never', 0.9);
 
         $file = __DIR__ . '/data/basic-sitemap.xml';
         self::assertXmlStringEqualsXmlFile($file, $this->map->toXmlString());
@@ -82,13 +88,13 @@ class SitemapTest extends TestCase
     public function testAddingUrisAfterRenderWillCauseReRender(): void
     {
         $lastMod = DateTime::createFromFormat('Y-m-d H:i:s', '2018-01-01 12:00:00');
-        $this->map->addUri(new Uri('/test'), $lastMod, 'never', 0.9);
+        $this->map->addUri('/test', $lastMod, 'never', 0.9);
 
         $file = __DIR__ . '/data/basic-sitemap.xml';
         self::assertXmlStringEqualsXmlFile($file, $this->map->toXmlString());
 
         $lastMod = DateTime::createFromFormat('Y-m-d H:i:s', '2018-01-02 12:00:00');
-        $this->map->addUri(new Uri('/test2'), $lastMod, 'always', 0.1);
+        $this->map->addUri('/test2', $lastMod, 'always', 0.1);
 
         $file = __DIR__ . '/data/sitemap-with-2-uris.xml';
         self::assertXmlStringEqualsXmlFile($file, $this->map->toXmlString());
@@ -97,14 +103,12 @@ class SitemapTest extends TestCase
     public function testToArrayReturnsArray(): void
     {
         $value = $this->map->toArray();
-        self::assertIsArray($value);
         self::assertCount(0, $value);
 
         $lastMod = DateTime::createFromFormat('Y-m-d H:i:s', '2018-01-01 12:00:00');
-        $this->map->addUri(new Uri('/test'), $lastMod, 'never', 0.9);
+        $this->map->addUri('/test', $lastMod, 'never', 0.9);
 
         $value = $this->map->toArray();
-        self::assertIsArray($value);
         self::assertCount(1, $value);
     }
 
@@ -117,8 +121,8 @@ class SitemapTest extends TestCase
 
     public function testBaseUrlIsPrependedWhenAppropriate(): void
     {
-        $this->map->addUri(new Uri('/test'));
-        $this->map->addUri(new Uri('http://www.example.com/test'));
+        $this->map->addUri('/test');
+        $this->map->addUri('http://www.example.com/test');
 
         $urls = $this->map->toArray();
         self::assertSame('http://localhost/test', $urls[0]['loc']);
@@ -130,11 +134,5 @@ class SitemapTest extends TestCase
         $this->map->addUri('/test/strings');
         $urls = $this->map->toArray();
         self::assertSame('http://localhost/test/strings', $urls[0]['loc']);
-    }
-
-    public function testAddUriThrowsExceptionForInvalidType(): void
-    {
-        $this->expectException(InvalidArgument::class);
-        $this->map->addUri([]);
     }
 }

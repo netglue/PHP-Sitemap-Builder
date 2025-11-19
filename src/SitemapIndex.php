@@ -4,74 +4,51 @@ declare(strict_types=1);
 
 namespace Netglue\Sitemap;
 
-use DateTime;
+use DateTimeImmutable;
 use DateTimeInterface;
-use Laminas\Uri\Exception\ExceptionInterface as UriException;
-use Laminas\Uri\Uri;
-use Laminas\Uri\UriInterface;
+use League\Uri\Uri;
 use Netglue\Sitemap\Exception\InvalidArgument;
 use XMLWriter;
 
 use function count;
 use function sprintf;
 
-class SitemapIndex
+final class SitemapIndex
 {
-    public const SCHEMA = 'http://www.sitemaps.org/schemas/sitemap/0.9';
+    public const SCHEMA = 'https://www.sitemaps.org/schemas/sitemap/0.9';
     private const MAX_PER_SITEMAP = 50000;
 
-    /** @var int */
-    private $maxLoc = self::MAX_PER_SITEMAP;
-
     /** @var Sitemap[] */
-    private $sitemaps = [];
+    private array $sitemaps = [];
+    private Sitemap|null $currentSitemap = null;
+    private DateTimeInterface|null $lastMod = null;
+    private readonly Uri $baseUrl;
 
-    /** @var Sitemap|null */
-    private $currentSitemap;
-
-    /** @var DateTimeInterface|null */
-    private $lastMod;
-
-    /** @var UriInterface|null */
-    private $baseUrl;
-
-    public function __construct(string $baseUrl, int $maxPerSiteMap = self::MAX_PER_SITEMAP)
+    public function __construct(string $baseUrl, private readonly int $maxEntriesPerSitemap = self::MAX_PER_SITEMAP)
     {
-        $this->setBaseUrl($baseUrl);
-        $this->setMaxEntriesPerSitemap($maxPerSiteMap);
-    }
-
-    private function setBaseUrl(string $url): void
-    {
-        $uri = new Uri($url);
-        if (! $uri->isAbsolute()) {
+        if ($maxEntriesPerSitemap < 1 || $maxEntriesPerSitemap > 50000) {
             throw new InvalidArgument(
-                'Base URL must include scheme and host, i.e. https://example.com'
+                'The max number of url entries per sitemap must be between 1 and 50k',
             );
         }
 
-        $this->baseUrl = $uri;
-        if (! empty($this->baseUrl->getPath())) {
-            return;
+        $uri = Uri::new($baseUrl);
+        if (! $uri->isAbsolute()) {
+            throw new InvalidArgument(
+                'Base URL must include scheme and host, i.e. https://example.com',
+            );
         }
 
-        $this->baseUrl->setPath('/');
+        if ($uri->getPath() === '') {
+            $uri = $uri->withPath('/');
+        }
+
+        $this->baseUrl = $uri;
     }
 
     public function getBaseUrl(): string
     {
         return (string) $this->baseUrl;
-    }
-
-    private function setMaxEntriesPerSitemap(int $max): void
-    {
-        if ($max < 1 || $max > 50000) {
-            throw new InvalidArgument(
-                'The max number of url entries per sitemap must be between 1 and 50k'
-            );
-        }
-
-        $this->maxLoc = $max;
     }
 
     /** @return Sitemap[] */
@@ -83,44 +60,38 @@ class SitemapIndex
     private function getSitemap(): Sitemap
     {
         // Unset current sitemap if it's getting big…
-        if ($this->currentSitemap && $this->currentSitemap->count() >= $this->maxLoc) {
+        if ($this->currentSitemap && $this->currentSitemap->count() >= $this->maxEntriesPerSitemap) {
             $this->currentSitemap = null;
         }
 
         $index = count($this->sitemaps);
         if (! $this->currentSitemap) {
             $filename = $this->generateSitemapName($index);
-            $this->currentSitemap = new Sitemap($filename, (string) $this->baseUrl);
+            $this->currentSitemap = new Sitemap($filename, $this->baseUrl->toString());
             $this->sitemaps[$index] = $this->currentSitemap;
         }
 
         return $this->currentSitemap;
     }
 
+    /** @return non-empty-string */
     private function generateSitemapName(int $index): string
     {
         return sprintf('sitemap-%d.xml', $index);
     }
 
-    /** @param Uri|string $uri */
     public function addUri(
-        $uri,
-        ?DateTimeInterface $lastMod = null,
-        ?string $changeFreq = null,
-        ?float $priority = null
+        string $uri,
+        DateTimeInterface|null $lastMod = null,
+        string|null $changeFreq = null,
+        float|null $priority = null,
     ): void {
-        try {
-            $uri = Uri::merge($this->baseUrl, $uri);
-        } catch (UriException $e) {
-            throw new InvalidArgument('URIs must be strings or Laminas\Uri instances', 0, $e);
-        }
-
         $sitemap = $this->getSitemap();
         $sitemap->addUri($uri, $lastMod, $changeFreq, $priority);
         $this->lastMod($lastMod);
     }
 
-    private function lastMod(?DateTimeInterface $lastMod = null): ?DateTimeInterface
+    private function lastMod(DateTimeInterface|null $lastMod = null): DateTimeInterface|null
     {
         if (! $this->lastMod && $lastMod) {
             $this->lastMod = clone $lastMod;
@@ -138,7 +109,7 @@ class SitemapIndex
         // LastMod is set to the same date for all sitemaps, but do we care?
         $lastMod = $this->lastMod();
         if (! $lastMod) {
-            $lastMod = new DateTime();
+            $lastMod = new DateTimeImmutable();
         }
 
         $writer = new XMLWriter();
@@ -149,7 +120,7 @@ class SitemapIndex
         $writer->writeAttribute('xmlns', self::SCHEMA);
         foreach ($this->sitemaps as $sitemap) {
             $writer->startElement('sitemap');
-            $sitemapUrl = Uri::merge($this->baseUrl, $sitemap->getName());
+            $sitemapUrl = $this->baseUrl->withPath('/' . $sitemap->getName());
             $writer->writeElement('loc', (string) $sitemapUrl);
             $writer->writeElement('lastmod', $lastMod->format('Y-m-d'));
             $writer->endElement();
@@ -158,7 +129,7 @@ class SitemapIndex
         $writer->endElement();
         $writer->endDocument();
 
-        return $writer->outputMemory(true);
+        return $writer->outputMemory();
     }
 
     public function __toString(): string
